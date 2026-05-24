@@ -36,6 +36,7 @@ interface VolunteerItem {
   tag: string
   color: string
   icon: string
+  image?: string
 }
 
 interface Metric {
