@@ -9,12 +9,12 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'colorful',
+  theme: 'light-gold',
   setTheme: () => {},
 })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('colorful')
+  const [theme, setThemeState] = useState<Theme>('light-gold')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

@@ -7,10 +7,10 @@ export function ThemeScript() {
         if (t && ['colorful','dark-gold','light-gold'].includes(t)) {
           document.documentElement.setAttribute('data-theme', t);
         } else {
-          document.documentElement.setAttribute('data-theme', 'colorful');
+          document.documentElement.setAttribute('data-theme', 'light-gold');
         }
       } catch(e) {
-        document.documentElement.setAttribute('data-theme', 'colorful');
+        document.documentElement.setAttribute('data-theme', 'light-gold');
       }
     })();
   `
