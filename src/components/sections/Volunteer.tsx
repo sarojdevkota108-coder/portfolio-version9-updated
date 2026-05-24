@@ -67,7 +67,7 @@ function CertModal({ src, isPDF, name, onClose }: { src: string; isPDF: boolean;
           <iframe
             src={`${src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
             title={name}
-            style={{ width: '90vw', height: '90vh', border: 'none', background: '#fff', borderRadius: '8px' }}
+            style={{ width: '95vw', height: '85vh', border: 'none', background: '#fff', borderRadius: '8px' }}
           />
         ) : (
           <img src={src} alt={name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
@@ -199,11 +199,20 @@ export function Volunteer() {
                         >
                           {isPDF ? (
                             <div onClick={() => setModal({ src: item.image!, isPDF: true, name: item.title })} style={{ cursor: 'pointer' }}>
+                              {/* Desktop: inline iframe */}
                               <iframe
                                 src={`${item.image}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                                 title={item.title}
+                                className="hidden md:block"
                                 style={{ width: '100%', height: 480, border: 'none', display: 'block', pointerEvents: 'none' }}
                               />
+                              {/* Mobile: tap to open button */}
+                              <div
+                                className="flex md:hidden items-center justify-center gap-3"
+                                style={{ height: 90, background: `${c}08`, fontSize: 13, color: c, fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}
+                              >
+                                <span style={{ fontSize: 22 }}>📄</span> TAP TO VIEW PDF
+                              </div>
                             </div>
                           ) : (
                             <img

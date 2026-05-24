@@ -81,16 +81,20 @@ function CertCard({ cert, index, onOpen }: { cert: Certification; index: number;
         >
           {isPDF ? (
             <div onClick={() => onOpen?.(cert.image || '', true, cert.name)} style={{ cursor: 'pointer' }}>
+              {/* Desktop: inline iframe preview */}
               <iframe
                 src={`${cert.image}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                 title={cert.name}
-                style={{
-                  width: '100%',
-                  height: 720,
-                  border: 'none',
-                  display: 'block',
-                }}
+                className="hidden md:block"
+                style={{ width: '100%', height: 720, border: 'none', display: 'block' }}
               />
+              {/* Mobile: tap to open instead of zoomed iframe */}
+              <div
+                className="flex md:hidden items-center justify-center gap-3"
+                style={{ height: 100, background: `${col}08`, fontSize: 13, color: col, fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}
+              >
+                <span style={{ fontSize: 22 }}>📄</span> TAP TO VIEW PDF
+              </div>
             </div>
           ) : (
             <img
@@ -414,7 +418,7 @@ export function Certifications() {
               <iframe
                 src={`${modal.src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                 title={modal.name}
-                style={{ width: '90vw', height: '90vh', border: 'none', background: '#fff' }}
+                style={{ width: '95vw', height: '85vh', border: 'none', background: '#fff', borderRadius: 8 }}
               />
             ) : (
               <img src={modal.src} alt={modal.name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }} />
