@@ -7,6 +7,56 @@ import {
   IconShield, IconHeart, IconSchool, IconMicrophone,
 } from '@tabler/icons-react'
 
+// ── Mobile-first PDF viewer (shared with Certifications) ─────────────────────
+function PDFViewer({ src, name }: { src: string; name: string }) {
+  const [useFallback, setUseFallback] = useState(false)
+  const absUrl = typeof window !== 'undefined'
+    ? new URL(src, window.location.href).href
+    : src
+
+  if (useFallback) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <iframe
+          src={`https://docs.google.com/viewer?url=${encodeURIComponent(absUrl)}&embedded=true`}
+          title={name}
+          style={{ flex: 1, border: 'none', background: '#fff' }}
+        />
+        <div style={{ padding: '10px 16px', background: 'rgba(4,4,10,0.9)', textAlign: 'center' }}>
+          <a href={src} download style={{ fontSize: 12, color: '#00d4ff', fontFamily: 'var(--font-mono)' }}>
+            Can&apos;t see it? Download PDF
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col">
+      <object
+        data={`${src}#toolbar=1&navpanes=0&scrollbar=1&view=FitH&zoom=page-width`}
+        type="application/pdf"
+        style={{ flex: 1, width: '100%', border: 'none' }}
+        onError={() => setUseFallback(true)}
+      >
+        <div className="flex flex-col items-center justify-center gap-4 h-full" style={{ padding: 32, textAlign: 'center' }}>
+          <span style={{ fontSize: 48 }}>📄</span>
+          <p style={{ fontSize: 14, color: 'var(--txt2)', lineHeight: 1.6 }}>Your browser can&apos;t display PDFs inline.</p>
+          <button
+            onClick={() => setUseFallback(true)}
+            style={{ padding: '10px 22px', borderRadius: 10, background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.3)', color: '#00d4ff', fontSize: 13, fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
+          >
+            Try Google Docs Viewer
+          </button>
+          <a href={src} download style={{ padding: '10px 22px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--txt)', fontSize: 13, fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>
+            Download PDF instead
+          </a>
+        </div>
+      </object>
+    </div>
+  )
+}
+
 const ICON_MAP: Record<string, React.ReactNode> = {
   shield:     <IconShield size={18} />,
   heart:      <IconHeart size={18} />,
@@ -48,29 +98,46 @@ function CertModal({ src, isPDF, name, onClose }: { src: string; isPDF: boolean;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(4,4,10,0.85)', cursor: 'none' }}
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'rgba(4,4,10,0.96)' }}
     >
-      <div onClick={e => e.stopPropagation()} className="relative">
-        <button
-          onClick={onClose}
-          style={{
-            cursor: 'none', position: 'absolute', top: '-14px', right: '-14px',
-            width: '32px', height: '32px', borderRadius: '50%',
-            background: 'var(--bg4)', border: '1px solid var(--line2)',
-            color: 'var(--txt2)', fontSize: '18px', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-          }}
-        >×</button>
+      {/* Top bar */}
+      <div
+        className="flex items-center justify-between flex-shrink-0"
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(4,4,10,0.9)',
+        }}
+      >
+        <div style={{ fontSize: 13, color: 'var(--txt2)', fontFamily: 'var(--font-mono)', letterSpacing: '.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'calc(100vw - 120px)' }}>
+          {name}
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {isPDF && (
+            <a
+              href={src}
+              download
+              style={{ fontSize: 11, color: '#00d4ff', fontFamily: 'var(--font-mono)', letterSpacing: '.06em', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(0,212,255,0.3)', background: 'rgba(0,212,255,0.08)', textDecoration: 'none', whiteSpace: 'nowrap' }}
+            >
+              ↓ Save
+            </a>
+          )}
+          <button
+            onClick={onClose}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--txt)', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >×</button>
+        </div>
+      </div>
+
+      {/* Viewer — fills remaining height */}
+      <div className="flex-1 relative overflow-hidden">
         {isPDF ? (
-          <iframe
-            src={`${src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-            title={name}
-            style={{ width: '95vw', height: '85vh', border: 'none', background: '#fff', borderRadius: '8px' }}
-          />
+          <PDFViewer src={src} name={name} />
         ) : (
-          <img src={src} alt={name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
+          <div className="w-full h-full flex items-center justify-center p-4">
+            <img src={src} alt={name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }} />
+          </div>
         )}
       </div>
     </div>
@@ -206,12 +273,15 @@ export function Volunteer() {
                                 className="hidden md:block"
                                 style={{ width: '100%', height: 480, border: 'none', display: 'block', pointerEvents: 'none' }}
                               />
-                              {/* Mobile: tap to open button */}
+                              {/* Mobile: prominent tap-to-open button */}
                               <div
-                                className="flex md:hidden items-center justify-center gap-3"
-                                style={{ height: 90, background: `${c}08`, fontSize: 13, color: c, fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}
+                                className="flex md:hidden flex-col items-center justify-center gap-2"
+                                style={{ height: 110, background: `${c}10`, cursor: 'pointer' }}
                               >
-                                <span style={{ fontSize: 22 }}>📄</span> TAP TO VIEW PDF
+                                <span style={{ fontSize: 30 }}>📄</span>
+                                <span style={{ fontSize: 12, color: c, fontFamily: 'var(--font-mono)', letterSpacing: '.08em', padding: '5px 14px', borderRadius: 8, background: `${c}18`, border: `1px solid ${c}35` }}>
+                                  TAP TO VIEW PDF
+                                </span>
                               </div>
                             </div>
                           ) : (

@@ -26,8 +26,9 @@ export function Hero() {
   const [SOCIALS, setSocials] = React.useState<Record<string, string>>({ github: '#', linkedin: '#', instagram: '#', email: '#' })
 
   const { scrollY } = useScroll()
-  const photoY      = useTransform(scrollY, [0, 600], [0, 80])
-  const photoOpacity = useTransform(scrollY, [0, 400], [1, 0.2])
+  const photoY       = useTransform(scrollY, [0, 600], [0, 80])
+  // Start fading much later (600→900) so the photo is fully visible at rest on mobile
+  const photoOpacity = useTransform(scrollY, [600, 900], [1, 0.2])
 
   useEffect(() => {
     fetch('/api/cms?section=metrics').then(r => r.json()).then(j => setMetrics(j.data || [])).catch(() => {})
@@ -334,13 +335,16 @@ export function Hero() {
             className="relative z-[5]"
             style={{
               y: photoY,
+              // Only apply opacity fade on desktop where there's scroll room;
+              // on mobile it starts fading immediately and looks broken
               opacity: photoOpacity,
               position: 'relative',
               zIndex: 5,
               borderRadius: '24px',
               overflow: 'hidden',
-              width: '340px',
-              height: '480px',
+              // Responsive: shrink on small screens instead of fixed 340px
+              width: 'min(340px, 78vw)',
+              height: 'min(480px, calc(78vw * 1.41))',
               boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
             }}
           >
@@ -349,6 +353,8 @@ export function Hero() {
               alt="Saroj Devkota"
               fill
               priority
+              quality={95}
+              sizes="(max-width: 768px) 78vw, 340px"
               style={{ objectFit: 'cover', objectPosition: 'center top' }}
             />
             {/* Gradient overlay at bottom */}

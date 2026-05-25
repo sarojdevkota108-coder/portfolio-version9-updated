@@ -5,6 +5,85 @@ import { useInView } from 'react-intersection-observer'
 import { COLOR_MAP, STATUS_CONFIG } from '@/lib/utils'
 import { IconCheck, IconRefresh, IconClock, IconExternalLink, IconShield } from '@tabler/icons-react'
 
+// ── Mobile-first PDF viewer ───────────────────────────────────────────────────
+// Strategy: use <object> which renders the browser's native PDF viewer with
+// pinch-to-zoom on iOS/Android. If that fails (older Android WebView), fall
+// back to a Google Docs embed with a direct download link always visible.
+function PDFViewer({ src, name }: { src: string; name: string }) {
+  const [useFallback, setUseFallback] = useState(false)
+  const absUrl = typeof window !== 'undefined'
+    ? new URL(src, window.location.href).href
+    : src
+
+  if (useFallback) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <iframe
+          src={`https://docs.google.com/viewer?url=${encodeURIComponent(absUrl)}&embedded=true`}
+          title={name}
+          style={{ flex: 1, border: 'none', background: '#fff' }}
+        />
+        <div style={{ padding: '10px 16px', background: 'rgba(4,4,10,0.9)', textAlign: 'center' }}>
+          <a
+            href={src}
+            download
+            style={{ fontSize: 12, color: '#00d4ff', fontFamily: 'var(--font-mono)' }}
+          >
+            Can&apos;t see it? Download PDF
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col">
+      <object
+        data={`${src}#toolbar=1&navpanes=0&scrollbar=1&view=FitH&zoom=page-width`}
+        type="application/pdf"
+        style={{ flex: 1, width: '100%', border: 'none' }}
+        onError={() => setUseFallback(true)}
+      >
+        {/* Shown when browser has no PDF plugin (common on Android) */}
+        <div
+          className="flex flex-col items-center justify-center gap-4 h-full"
+          style={{ padding: 32, textAlign: 'center' }}
+        >
+          <span style={{ fontSize: 48 }}>📄</span>
+          <p style={{ fontSize: 14, color: 'var(--txt2)', lineHeight: 1.6 }}>
+            Your browser can&apos;t display PDFs inline.
+          </p>
+          <button
+            onClick={() => setUseFallback(true)}
+            style={{
+              padding: '10px 22px', borderRadius: 10,
+              background: 'rgba(0,212,255,0.12)',
+              border: '1px solid rgba(0,212,255,0.3)',
+              color: '#00d4ff', fontSize: 13,
+              fontFamily: 'var(--font-mono)', cursor: 'pointer',
+            }}
+          >
+            Try Google Docs Viewer
+          </button>
+          <a
+            href={src}
+            download
+            style={{
+              padding: '10px 22px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: 'var(--txt)', fontSize: 13,
+              fontFamily: 'var(--font-mono)', textDecoration: 'none',
+            }}
+          >
+            Download PDF instead
+          </a>
+        </div>
+      </object>
+    </div>
+  )
+}
+
 type Filter = 'all' | 'done' | 'prog' | 'upcoming'
 
 interface Certification {
@@ -88,12 +167,26 @@ function CertCard({ cert, index, onOpen }: { cert: Certification; index: number;
                 className="hidden md:block"
                 style={{ width: '100%', height: 720, border: 'none', display: 'block' }}
               />
-              {/* Mobile: tap to open instead of zoomed iframe */}
+              {/* Mobile: prominent tap-to-open button */}
               <div
-                className="flex md:hidden items-center justify-center gap-3"
-                style={{ height: 100, background: `${col}08`, fontSize: 13, color: col, fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}
+                className="flex md:hidden flex-col items-center justify-center gap-2"
+                style={{
+                  height: 120,
+                  background: `${col}10`,
+                  borderRadius: 12,
+                  margin: '0 0',
+                  cursor: 'pointer',
+                }}
               >
-                <span style={{ fontSize: 22 }}>📄</span> TAP TO VIEW PDF
+                <span style={{ fontSize: 32 }}>📄</span>
+                <span style={{
+                  fontSize: 12, color: col,
+                  fontFamily: 'var(--font-mono)', letterSpacing: '.08em',
+                  padding: '6px 16px', borderRadius: 8,
+                  background: `${col}18`, border: `1px solid ${col}35`,
+                }}>
+                  TAP TO VIEW PDF
+                </span>
               </div>
             </div>
           ) : (
@@ -399,29 +492,74 @@ export function Certifications() {
         )}
 
       </div>
-      {/* Fullscreen modal */}
+      {/* Fullscreen modal — mobile-first PDF viewer */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(4,4,10,0.8)' }}
-          onClick={() => setModal(null)}
+          className="fixed inset-0 z-50 flex flex-col"
+          style={{ background: 'rgba(4,4,10,0.96)' }}
         >
-          <div onClick={e => e.stopPropagation()} className="relative">
-            <button
-              onClick={() => setModal(null)}
-              className="absolute -top-4 -right-4 bg-black/60 rounded-full p-2 text-white"
-              style={{ fontSize: 18 }}
-            >
-              ×
-            </button>
+          {/* Top bar */}
+          <div
+            className="flex items-center justify-between flex-shrink-0"
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(4,4,10,0.9)',
+            }}
+          >
+            <div style={{ fontSize: 13, color: 'var(--txt2)', fontFamily: 'var(--font-mono)', letterSpacing: '.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'calc(100vw - 120px)' }}>
+              {modal.name}
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {modal.isPDF && (
+                <a
+                  href={modal.src}
+                  download
+                  style={{
+                    fontSize: 11,
+                    color: '#00d4ff',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '.06em',
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(0,212,255,0.3)',
+                    background: 'rgba(0,212,255,0.08)',
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ↓ Save
+                </a>
+              )}
+              <button
+                onClick={() => setModal(null)}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: 'var(--txt)',
+                  fontSize: 20, lineHeight: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* Viewer area — fills remaining height */}
+          <div className="flex-1 relative overflow-hidden">
             {modal.isPDF ? (
-              <iframe
-                src={`${modal.src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                title={modal.name}
-                style={{ width: '95vw', height: '85vh', border: 'none', background: '#fff', borderRadius: 8 }}
-              />
+              <PDFViewer src={modal.src} name={modal.name} />
             ) : (
-              <img src={modal.src} alt={modal.name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }} />
+              <div className="w-full h-full flex items-center justify-center p-4">
+                <img
+                  src={modal.src}
+                  alt={modal.name}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }}
+                />
+              </div>
             )}
           </div>
         </div>
